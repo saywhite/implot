@@ -3902,6 +3902,7 @@ void DragPointEx(const _Getter& getter, float radius, const ImU32 col32) {
     const ImPlotNextItemData& s = GetItemData();
     const ImU32 col_fill = ImGui::GetColorU32(s.Colors[ImPlotCol_MarkerFill]);
 
+    ImPlotMarker marker = s.Marker == ImPlotMarker_None ? ImPlotMarker_Circle: s.Marker;
     RenderMarkers<_Getter>(getter, s.Marker, radius, s.RenderMarkerFill, col_fill, s.RenderMarkerLine, col32, s.MarkerWeight);
 }
 
