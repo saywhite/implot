@@ -25,6 +25,9 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "implot.h"
 #include "implot_internal.h"
+#include "implot_items.h"
+
+/*
 
 //-----------------------------------------------------------------------------
 // [SECTION] Macros and Defines
@@ -66,6 +69,8 @@ static IMPLOT_INLINE float  ImInvSqrt(float x) { return 1.0f / sqrtf(x); }
 #if (IMGUI_VERSION_NUM < 18102) && !defined(ImDrawFlags_RoundCornersAll)
 #define ImDrawFlags_RoundCornersAll ImDrawCornerFlags_All
 #endif
+
+*/
 
 //-----------------------------------------------------------------------------
 // [SECTION] Template instantiation utility
@@ -1561,6 +1566,9 @@ void RenderMarkers(const _Getter& getter, ImPlotMarker marker, float size, bool 
         }
     }
 }
+
+// adding below so linker can work
+template void ImPlot::RenderMarkers<ImPlot::GetterXY2>(ImPlot::GetterXY2 const&, ImPlotMarker marker, float size, bool rend_fill, ImU32 col_fill, bool rend_line, ImU32 col_line, float weight);
 
 //-----------------------------------------------------------------------------
 // [SECTION] PlotLine

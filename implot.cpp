@@ -128,6 +128,7 @@ You can read releases logs https://github.com/epezent/implot/releases for more d
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "implot.h"
 #include "implot_internal.h"
+#include "implot_items.h"
 
 #include <stdlib.h>
 
@@ -3894,6 +3895,71 @@ IMPLOT_API void TagYV(double y, const ImVec4& color, const char* fmt, va_list ar
 
 static const float DRAG_GRAB_HALF_SIZE = 4.0f;
 
+template <typename _Getter>
+void DragPointEx(const _Getter& getter, float radius, const ImU32 col32) {
+
+    // DrawList.AddCircleFilled(pos, radius, col32);
+    const ImPlotNextItemData& s = GetItemData();
+    const ImU32 col_fill = ImGui::GetColorU32(s.Colors[ImPlotCol_MarkerFill]);
+
+    RenderMarkers<_Getter>(getter, s.Marker, radius, s.RenderMarkerFill, col_fill, s.RenderMarkerLine, col32, s.MarkerWeight);
+}
+
+bool DragPoint(int n_id, double* x, double* y, const ImVec4& col, float radius, ImPlotDragToolFlags flags, bool* out_clicked, bool* out_hovered, bool* out_held) {
+
+    ImGui::PushID("#IMPLOT_DRAG_POINT");
+    IM_ASSERT_USER_ERROR(GImPlot->CurrentPlot != nullptr, "DragPoint() needs to be called between BeginPlot() and EndPlot()!");
+    SetupLock();
+
+    if (!ImHasFlag(flags,ImPlotDragToolFlags_NoFit) && FitThisFrame()) {
+        FitPoint(ImPlotPoint(*x,*y));
+    }
+
+    const bool input = !ImHasFlag(flags, ImPlotDragToolFlags_NoInputs);
+    const bool show_curs = !ImHasFlag(flags, ImPlotDragToolFlags_NoCursors);
+    const bool no_delay = !ImHasFlag(flags, ImPlotDragToolFlags_Delayed);
+    const float grab_half_size = ImMax(DRAG_GRAB_HALF_SIZE, radius);
+    const ImVec4 color = IsColorAuto(col) ? ImGui::GetStyleColorVec4(ImGuiCol_Text) : col;
+    const ImU32 col32 = ImGui::ColorConvertFloat4ToU32(color);
+
+    ImVec2 pos = PlotToPixels(*x,*y,IMPLOT_AUTO,IMPLOT_AUTO);
+    const ImGuiID id = ImGui::GetCurrentWindow()->GetID(n_id);
+    ImRect rect(pos.x-grab_half_size,pos.y-grab_half_size,pos.x+grab_half_size,pos.y+grab_half_size);
+    bool hovered = false, held = false;
+
+    ImGui::KeepAliveID(id);
+    if (input) {
+        bool clicked = ImGui::ButtonBehavior(rect,id,&hovered,&held);
+        if (out_clicked) *out_clicked = clicked;
+        if (out_hovered) *out_hovered = hovered;
+        if (out_held)    *out_held    = held;
+    }
+
+    bool modified = false;
+    if (held && ImGui::IsMouseDragging(0)) {
+        *x = ImPlot::GetPlotMousePos(IMPLOT_AUTO,IMPLOT_AUTO).x;
+        *y = ImPlot::GetPlotMousePos(IMPLOT_AUTO,IMPLOT_AUTO).y;
+        modified = true;
+    }
+
+    PushPlotClipRect();
+    ImDrawList& DrawList = *GetPlotDrawList();
+    if ((hovered || held) && show_curs)
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    if (modified && no_delay)
+        pos = PlotToPixels(*x,*y,IMPLOT_AUTO,IMPLOT_AUTO);
+
+    // DrawList.AddCircleFilled(pos, radius, col32);
+    GetterXY2 getter(*x, *y);
+    DragPointEx(getter, radius, col32);
+
+    PopPlotClipRect();
+
+    ImGui::PopID();
+    return modified;
+}
+
+/*
 bool DragPoint(int n_id, double* x, double* y, const ImVec4& col, float radius, ImPlotDragToolFlags flags, bool* out_clicked, bool* out_hovered, bool* out_held) {
     ImGui::PushID("#IMPLOT_DRAG_POINT");
     IM_ASSERT_USER_ERROR(GImPlot->CurrentPlot != nullptr, "DragPoint() needs to be called between BeginPlot() and EndPlot()!");
@@ -3942,6 +4008,7 @@ bool DragPoint(int n_id, double* x, double* y, const ImVec4& col, float radius, 
     ImGui::PopID();
     return modified;
 }
+*/
 
 bool DragLineX(int n_id, double* value, const ImVec4& col, float thickness, ImPlotDragToolFlags flags, bool* out_clicked, bool* out_hovered, bool* out_held) {
     // ImGui::PushID("#IMPLOT_DRAG_LINE_X");
